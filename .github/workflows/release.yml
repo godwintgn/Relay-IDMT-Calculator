@@ -66,10 +66,14 @@ jobs:
           pip3 install -r requirements.txt
           pip3 install pyinstaller
 
-      - name: Build Linux binary (with PNG icon)
+      - name: Build Linux binary (with PNG icon + Pillow/Tkinter fixes)
         run: |
           pyinstaller --windowed --onefile \
             --icon icon.png \
+            --hidden-import=PIL.Image \
+            --hidden-import=PIL.ImageTk \
+            --hidden-import=PIL._tkinter_finder \
+            --hidden-import=PIL._plugins \
             --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
 
       - name: Download appimagetool
