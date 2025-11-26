@@ -104,7 +104,7 @@ jobs:
       - name: Download appimagetool
         run: |
           wget -qO appimagetool \
-            https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
 
       - name: Create AppDir
