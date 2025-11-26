@@ -1,8 +1,8 @@
-name: Build Windows & Linux Releases
+name: Build, Test & Release
 
 permissions:
   contents: write
-  
+
 on:
   push:
     tags:
@@ -10,12 +10,18 @@ on:
 
 jobs:
 
+  # ---------------------------------------------------------
+  #  WINDOWS BUILD + TEST
+  # ---------------------------------------------------------
   build-windows:
     runs-on: windows-latest
+    outputs:
+      exe_path: ${{ steps.upload.outputs.artifact }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -32,41 +38,56 @@ jobs:
           tar -xf upx-4.2.4-win64.zip
           move upx-4.2.4-win64 upx
 
-      - name: Build Windows EXE (with icon)
+      - name: Build Windows EXE
         run: |
           pyinstaller --windowed --onefile `
             --icon=icon.ico `
             --upx-dir upx `
             --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
 
+      - name: Test Windows EXE launches
+        run: |
+          $p = Start-Process dist\IDMT-Trip-Calculator.exe -PassThru
+          Start-Sleep -Seconds 3
+          if ($p.HasExited) { Write-Error 'EXE crashed'; exit 1 }
+          Stop-Process -Id $p.Id
 
       - name: Upload Windows EXE
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
           path: dist/IDMT-Trip-Calculator.exe
 
 
+  # ---------------------------------------------------------
+  #  LINUX BUILD + TEST
+  # ---------------------------------------------------------
   build-linux:
     runs-on: ubuntu-latest
+    outputs:
+      appimage: ${{ steps.upload.outputs.appimage }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install build deps
         run: |
           sudo apt update
-          sudo apt install -y libfuse2 imagemagick ruby ruby-dev build-essential inkscape
-          sudo gem install fpm
-          python3 -m pip install --upgrade pip
-          pip3 install -r requirements.txt
-          pip3 install pyinstaller
+          sudo apt install -y libfuse2 fakeroot rpm xvfb
 
-      - name: Build Linux binary (with PNG icon + Pillow/Tkinter fixes)
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller pillow
+
+      - name: Build PyInstaller binary
         run: |
           pyinstaller --windowed --onefile \
             --icon icon.png \
@@ -76,65 +97,96 @@ jobs:
             --hidden-import=PIL._plugins \
             --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
 
+      - name: Test standalone binary (headless)
+        run: |
+          xvfb-run -a dist/IDMT-Trip-Calculator &
+          sleep 3
+          pgrep -f IDMT-Trip-Calculator || exit 1
+          pkill IDMT-Trip-Calculator
+
+      # --- Build AppImage ---
       - name: Download appimagetool
         run: |
-          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          wget -qO appimagetool \
+            https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage
           chmod +x appimagetool
 
-      - name: Create AppDir (with icon)
+      - name: Create AppDir
         run: |
           mkdir -p AppDir/usr/bin
           cp dist/IDMT-Trip-Calculator AppDir/usr/bin/
-
-          # AppRun launcher
-          cat << 'EOF' > AppDir/AppRun
-          #!/bin/bash
-          DIR="$(dirname "$(readlink -f "$0")")"
-          exec "$DIR/usr/bin/IDMT-Trip-Calculator"
-          EOF
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          cp icon.png AppDir/usr/share/icons/hicolor/256x256/apps/idmt.png
+          echo "[Desktop Entry]
+Type=Application
+Name=IDMT Trip Calculator
+Exec=IDMT-Trip-Calculator
+Icon=idmt
+Categories=Utility;" > AppDir/IDMT.desktop
+          echo "#!/bin/bash
+DIR=\$(dirname \$(readlink -f \"\$0\"))
+exec \"\$DIR/usr/bin/IDMT-Trip-Calculator\"" > AppDir/AppRun
           chmod +x AppDir/AppRun
 
-          # Desktop file
-          cat << 'EOF' > AppDir/idmt.desktop
-          [Desktop Entry]
-          Type=Application
-          Name=IDMT Trip Calculator
-          Exec=IDMT-Trip-Calculator
-          Icon=idmt
-          Categories=Utility;
-          EOF
-
-          # Copy icon
-          cp icon.png AppDir/idmt.png
-
       - name: Build AppImage
-        env:
-          ARCH: x86_64
         run: |
-          ./appimagetool AppDir IDMT-Trip-Calculator.AppImage
+          ARCH=x86_64 ./appimagetool AppDir IDMT-Trip-Calculator.AppImage
 
-
-      - name: Build .deb (with icon)
+      - name: Test AppImage
         run: |
-          mkdir -p pkgroot/usr/local/bin
-          mkdir -p pkgroot/usr/share/icons/hicolor/256x256/apps
-          cp dist/IDMT-Trip-Calculator pkgroot/usr/local/bin/
-          cp icon.png pkgroot/usr/share/icons/hicolor/256x256/apps/idmt-trip-calculator.png
+          chmod +x IDMT-Trip-Calculator.AppImage
+          xvfb-run -a ./IDMT-Trip-Calculator.AppImage &
+          sleep 3
+          pgrep -f IDMT-Trip-Calculator || exit 1
+          pkill IDMT-Trip-Calculator
 
-          fpm -s dir -t deb \
-            -n idmt-trip-calculator \
-            -v "${GITHUB_REF_NAME#v}" \
-            -C pkgroot .
+      # --- Build DEB ---
+      - name: Build DEB package
+        run: |
+          mkdir -p deb/DEBIAN
+          echo "Package: idmt-trip-calculator
+Version: ${GITHUB_REF_NAME#v}
+Architecture: amd64
+Maintainer: godwintgn
+Description: IEC Relay IDMT Calculator" > deb/DEBIAN/control
 
-      - name: Build .rpm (with icon)
+          mkdir -p deb/usr/local/bin
+          cp dist/IDMT-Trip-Calculator deb/usr/local/bin/idmt-trip-calculator
+
+          mkdir -p deb/usr/share/icons/hicolor/256x256/apps
+          cp icon.png deb/usr/share/icons/hicolor/256x256/apps/idmt.png
+
+          dpkg-deb --build deb idmt-trip-calculator_${GITHUB_REF_NAME#v}_amd64.deb
+
+      - name: Test DEB install
+        run: |
+          sudo apt install -y ./idmt-trip-calculator*.deb
+          xvfb-run -a IDMT-Trip-Calculator &
+          sleep 3
+          pgrep -f IDMT-Trip-Calculator || exit 1
+          sudo apt remove -y idmt-trip-calculator
+
+      # --- Build RPM ---
+      - name: Build RPM package
         run: |
           fpm -s dir -t rpm \
             -n idmt-trip-calculator \
-            -v "${GITHUB_REF_NAME#v}" \
-            --prefix /usr/local/bin \
-            dist/IDMT-Trip-Calculator
+            -v ${GITHUB_REF_NAME#v} \
+            dist/IDMT-Trip-Calculator=/usr/local/bin/idmt-trip-calculator \
+            icon.png=/usr/share/icons/hicolor/256x256/apps/idmt.png
 
-      - name: Upload Linux artifacts
+      - name: Test RPM (Fedora Container)
+        run: |
+          docker run --rm -v "$PWD:/app" fedora:40 bash -c "
+            dnf install -y /app/*.rpm &&
+            xvfb-run -a IDMT-Trip-Calculator &
+            sleep 3
+            pgrep -f IDMT-Trip-Calculator || exit 1
+            dnf remove -y idmt-trip-calculator
+          "
+
+      - name: Upload Linux builds
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: linux-builds
@@ -144,12 +196,14 @@ jobs:
             *.rpm
 
 
+  # ---------------------------------------------------------
+  #  PUBLISH RELEASE
+  # ---------------------------------------------------------
   release:
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
+    steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
