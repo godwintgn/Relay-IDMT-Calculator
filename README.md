@@ -16,7 +16,9 @@ Clean UI. Accurate math. Windows & Linux native builds.
     <img src="https://img.shields.io/github/v/release/godwintgn/Relay-IDMT-Calculator?color=2ea043&label=Latest%20Release&style=for-the-badge">
   </a>
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-0366d6?style=for-the-badge">
+  <a href="https://github.com/godwintgn/Relay-IDMT-Calculator/tree/main?tab=License-1-ov-file">
   <img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange?style=for-the-badge">
+  </a>
 </p>
 
 ---
