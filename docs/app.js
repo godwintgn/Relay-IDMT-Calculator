@@ -22,10 +22,10 @@ function calculateTripTime(pickup, fault, tms, curve) {
     const ratio = fault / pickup;
 
     const curves = {
-        normal:  { k: 0.14,  alpha: 0.02 },
-        very:    { k: 13.5, alpha: 1 },
-        extreme: { k: 80,   alpha: 2 },
-        long:    { k: 120,  alpha: 1 }
+        normal: { k: 0.14, alpha: 0.02 },
+        very: { k: 13.5, alpha: 1 },
+        extreme: { k: 80, alpha: 2 },
+        long: { k: 120, alpha: 1 }
     };
 
     const cfg = curves[curve];
@@ -54,9 +54,9 @@ document.getElementById("calcBtn").onclick = () => {
     const t = parseFloat(tms.value);
     const type = curve.value;
 
-    if (!p || p <= 0) { shake(pickup); result.textContent="Pickup must be > 0"; return; }
-    if (!f || f <= 0) { shake(fault); result.textContent="Fault must be > 0"; return; }
-    if (!t || t <= 0) { shake(tms); result.textContent="TMS must be > 0"; return; }
+    if (!p || p <= 0) { shake(pickup); result.textContent = "Pickup must be > 0"; return; }
+    if (!f || f <= 0) { shake(fault); result.textContent = "Fault must be > 0"; return; }
+    if (!t || t <= 0) { shake(tms); result.textContent = "TMS must be > 0"; return; }
 
     const trip = calculateTripTime(p, f, t, type);
     result.textContent = "Trip time: " + format(trip);
@@ -65,10 +65,38 @@ document.getElementById("calcBtn").onclick = () => {
 // ---------------------------
 // Share result
 // ---------------------------
-document.getElementById("shareBtn").onclick = () => {
-    const text = result.textContent;
-    if (navigator.share) navigator.share({ text });
-    else navigator.clipboard.writeText(text);
+document.getElementById("shareBtn").onclick = async () => {
+    const p = pickup.value;
+    const f = fault.value;
+    const t = tms.value;
+    const c = curve.options[curve.selectedIndex].text;
+    const r = result.textContent.replace("Trip time: ", "");
+
+    if (result.textContent.includes("---")) {
+        shake(document.getElementById("calcBtn"));
+        return;
+    }
+
+    const text = `*Relay IDMT Calculation*\n\n` +
+        `🔹 Pickup: ${p} A\n` +
+        `🔹 Fault: ${f} A\n` +
+        `🔹 TMS: ${t}\n` +
+        `🔹 Curve: ${c}\n\n` +
+        `⚡ *Trip Time: ${r}*`;
+
+    try {
+        if (navigator.share) {
+            await navigator.share({ text });
+        } else {
+            throw new Error("Web Share API not supported");
+        }
+    } catch (err) {
+        await navigator.clipboard.writeText(text);
+        const btn = document.getElementById("shareBtn");
+        const originalText = btn.textContent;
+        btn.textContent = "✅ Copied!";
+        setTimeout(() => btn.textContent = originalText, 2000);
+    }
 };
 
 // ---------------------------
