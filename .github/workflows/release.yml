@@ -175,10 +175,12 @@ jobs:
       - name: Test DEB install
         run: |
           sudo apt install -y ./idmt-trip-calculator*.deb
-          xvfb-run -a IDMT-Trip-Calculator &
+          xvfb-run -a idmt-trip-calculator &
           sleep 3
-          pgrep -f IDMT-Trip-Calculator || exit 1
+          pgrep -f idmt-trip-calculator || exit 1
+          pkill -f idmt-trip-calculator
           sudo apt remove -y idmt-trip-calculator
+
 
 
       # -----------------------------------------------------
