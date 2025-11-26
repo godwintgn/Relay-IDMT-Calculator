@@ -1,5 +1,8 @@
 name: Build Windows & Linux Releases
 
+permissions:
+  contents: write
+  
 on:
   push:
     tags:
