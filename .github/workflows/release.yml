@@ -1,4 +1,4 @@
-name: Build Windows & Linux Binaries
+name: Build Windows & Linux Releases
 
 on:
   push:
@@ -23,11 +23,20 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build EXE
+      - name: Install UPX
         run: |
-          pyinstaller --windowed --onefile --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
+          curl -LO https://github.com/upx/upx/releases/download/v4.2.4/upx-4.2.4-win64.zip
+          tar -xf upx-4.2.4-win64.zip
+          move upx-4.2.4-win64 upx
 
-      - name: Upload EXE
+      - name: Build Windows EXE (with icon)
+        run: |
+          pyinstaller --windowed --onefile ^
+            --icon=icon.ico ^
+            --upx-dir upx ^
+            --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
+
+      - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
@@ -47,34 +56,37 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y libfuse2
+          sudo apt install -y libfuse2 imagemagick ruby ruby-dev build-essential inkscape
+          sudo gem install fpm
           python3 -m pip install --upgrade pip
           pip3 install -r requirements.txt
           pip3 install pyinstaller
 
-      - name: Build Linux binary
+      - name: Build Linux binary (with PNG icon)
         run: |
-          pyinstaller --windowed --onefile --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
+          pyinstaller --windowed --onefile \
+            --icon icon.png \
+            --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
 
       - name: Download appimagetool
         run: |
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
           chmod +x appimagetool
 
-      - name: Create AppDir
+      - name: Create AppDir (with icon)
         run: |
           mkdir -p AppDir/usr/bin
           cp dist/IDMT-Trip-Calculator AppDir/usr/bin/
 
-          # Create AppRun launcher
+          # AppRun launcher
           cat << 'EOF' > AppDir/AppRun
           #!/bin/bash
-          here="$(dirname "$(readlink -f "$0")")"
-          exec "$here/usr/bin/IDMT-Trip-Calculator"
+          DIR="$(dirname "$(readlink -f "$0")")"
+          exec "$DIR/usr/bin/IDMT-Trip-Calculator"
           EOF
           chmod +x AppDir/AppRun
 
-          # Minimal desktop entry
+          # Desktop file
           cat << 'EOF' > AppDir/idmt.desktop
           [Desktop Entry]
           Type=Application
@@ -84,19 +96,41 @@ jobs:
           Categories=Utility;
           EOF
 
-          # Placeholder icon (simple 1x1 pixel)
-          convert -size 256x256 xc:#2f80ed AppDir/idmt.png || true
+          # Copy icon
+          cp icon.png AppDir/idmt.png
 
       - name: Build AppImage
         run: |
           ./appimagetool AppDir IDMT-Trip-Calculator.AppImage
 
-      - name: Upload AppImage
+      - name: Build .deb (with icon)
+        run: |
+          mkdir -p pkgroot/usr/local/bin
+          mkdir -p pkgroot/usr/share/icons/hicolor/256x256/apps
+          cp dist/IDMT-Trip-Calculator pkgroot/usr/local/bin/
+          cp icon.png pkgroot/usr/share/icons/hicolor/256x256/apps/idmt-trip-calculator.png
+
+          fpm -s dir -t deb \
+            -n idmt-trip-calculator \
+            -v "${GITHUB_REF_NAME#v}" \
+            -C pkgroot .
+
+      - name: Build .rpm (with icon)
+        run: |
+          fpm -s dir -t rpm \
+            -n idmt-trip-calculator \
+            -v "${GITHUB_REF_NAME#v}" \
+            --prefix /usr/local/bin \
+            dist/IDMT-Trip-Calculator
+
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-appimage
-          path: IDMT-Trip-Calculator.AppImage
-
+          name: linux-builds
+          path: |
+            IDMT-Trip-Calculator.AppImage
+            *.deb
+            *.rpm
 
 
   release:
