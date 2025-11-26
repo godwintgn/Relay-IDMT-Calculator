@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        // Prevent flicker (preload saved theme before render)
+        const saved = localStorage.getItem("theme") || "light";
+        if (saved === "dark") document.documentElement.classList.add("dark");
+    </script>
+
+    <title>Relay IDMT Calculator</title>
+</head>
+<body>
+
+<div class="container">
+
+    <button id="themeToggle" class="theme-toggle">🌙</button>
+
+    <div class="header">
+        <h1>⭐ Relay IDMT Calculator</h1>
+        <p>Fast. Accurate. IEC 60255 compliant.</p>
+    </div>
+
+    <div class="card">
+        <label for="pickup">Relay pickup current (A)</label>
+        <input id="pickup" type="text" placeholder="Example: 5">
+
+        <label for="fault">Fault current (A)</label>
+        <input id="fault" type="text" placeholder="Example: 1200">
+
+        <label for="tms">TMS</label>
+        <input id="tms" type="text" placeholder="Example: 0.1">
+
+        <label for="curve">Curve type</label>
+        <select id="curve">
+            <option value="normal">IEC Normal Inverse</option>
+            <option value="very">IEC Very Inverse</option>
+            <option value="extreme">IEC Extremely Inverse</option>
+            <option value="long">IEC Long Time Inverse</option>
+        </select>
+
+        <button id="calcBtn" class="sticky-button">Calculate</button>
+        <button id="shareBtn" class="share-btn">📤 Share result</button>
+
+        <div id="result">Enter values to calculate</div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+
+<!-- Register PWA service worker -->
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
