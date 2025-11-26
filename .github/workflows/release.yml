@@ -61,15 +61,42 @@ jobs:
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
           chmod +x appimagetool
 
+      - name: Create AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          cp dist/IDMT-Trip-Calculator AppDir/usr/bin/
+
+          # Create AppRun launcher
+          cat << 'EOF' > AppDir/AppRun
+          #!/bin/bash
+          here="$(dirname "$(readlink -f "$0")")"
+          exec "$here/usr/bin/IDMT-Trip-Calculator"
+          EOF
+          chmod +x AppDir/AppRun
+
+          # Minimal desktop entry
+          cat << 'EOF' > AppDir/idmt.desktop
+          [Desktop Entry]
+          Type=Application
+          Name=IDMT Trip Calculator
+          Exec=IDMT-Trip-Calculator
+          Icon=idmt
+          Categories=Utility;
+          EOF
+
+          # Placeholder icon (simple 1x1 pixel)
+          convert -size 256x256 xc:#2f80ed AppDir/idmt.png || true
+
       - name: Build AppImage
         run: |
-          ./appimagetool dist/ IDMT-Trip-Calculator.AppImage
+          ./appimagetool AppDir IDMT-Trip-Calculator.AppImage
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
           path: IDMT-Trip-Calculator.AppImage
+
 
 
   release:
