@@ -100,7 +100,10 @@ jobs:
           pgrep -f IDMT-Trip-Calculator || exit 1
           pkill -f IDMT-Trip-Calculator
 
-      # ---- AppImage Build ----
+
+      # -----------------------------------------------------
+      #  APPIMAGE BUILD + FIXED ICON
+      # -----------------------------------------------------
       - name: Download appimagetool
         run: |
           wget -qO appimagetool \
@@ -114,6 +117,9 @@ jobs:
 
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           cp icon.png AppDir/usr/share/icons/hicolor/256x256/apps/idmt.png
+
+          # REQUIRED for AppImage (Fixes: icon not found)
+          cp icon.png AppDir/idmt.png
 
           cat << 'EOF' > AppDir/IDMT.desktop
           [Desktop Entry]
@@ -143,7 +149,10 @@ jobs:
           pgrep -f IDMT-Trip-Calculator || exit 1
           pkill -f IDMT-Trip-Calculator
 
-      # ---- DEB Build ----
+
+      # -----------------------------------------------------
+      #  DEB PACKAGE
+      # -----------------------------------------------------
       - name: Build DEB package
         run: |
           mkdir -p deb/DEBIAN
@@ -171,7 +180,10 @@ jobs:
           pgrep -f IDMT-Trip-Calculator || exit 1
           sudo apt remove -y idmt-trip-calculator
 
-      # ---- RPM Build ----
+
+      # -----------------------------------------------------
+      #  RPM PACKAGE
+      # -----------------------------------------------------
       - name: Build RPM package
         run: |
           fpm -s dir -t rpm \
@@ -201,7 +213,7 @@ jobs:
 
 
   # ---------------------------------------------------------
-  #  RELEASE PUBLISH
+  #  RELEASE
   # ---------------------------------------------------------
   release:
     needs:
