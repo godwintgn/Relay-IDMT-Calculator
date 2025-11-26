@@ -15,8 +15,6 @@ jobs:
   # ---------------------------------------------------------
   build-windows:
     runs-on: windows-latest
-    outputs:
-      exe_path: ${{ steps.upload.outputs.artifact }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,15 +43,15 @@ jobs:
             --upx-dir upx `
             --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
 
-      - name: Test Windows EXE launches
+      - name: Test EXE launches
+        shell: pwsh
         run: |
           $p = Start-Process dist\IDMT-Trip-Calculator.exe -PassThru
           Start-Sleep -Seconds 3
-          if ($p.HasExited) { Write-Error 'EXE crashed'; exit 1 }
+          if ($p.HasExited) { Write-Error "EXE crashed"; exit 1 }
           Stop-Process -Id $p.Id
 
       - name: Upload Windows EXE
-        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
@@ -65,8 +63,6 @@ jobs:
   # ---------------------------------------------------------
   build-linux:
     runs-on: ubuntu-latest
-    outputs:
-      appimage: ${{ steps.upload.outputs.appimage }}
 
     steps:
       - uses: actions/checkout@v4
@@ -76,25 +72,24 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install build deps
+      - name: Install Linux build deps
         run: |
           sudo apt update
-          sudo apt install -y libfuse2 fakeroot rpm xvfb
+          sudo apt install -y libfuse2 rpm dpkg-dev fakeroot xvfb
 
-      - name: Install Python deps
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller pillow
 
-      - name: Build PyInstaller binary
+      - name: Build PyInstaller Binary
         run: |
           pyinstaller --windowed --onefile \
             --icon icon.png \
             --hidden-import=PIL.Image \
             --hidden-import=PIL.ImageTk \
             --hidden-import=PIL._tkinter_finder \
-            --hidden-import=PIL._plugins \
             --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
 
       - name: Test standalone binary (headless)
@@ -104,7 +99,7 @@ jobs:
           pgrep -f IDMT-Trip-Calculator || exit 1
           pkill IDMT-Trip-Calculator
 
-      # --- Build AppImage ---
+      # ---- AppImage Build ----
       - name: Download appimagetool
         run: |
           wget -qO appimagetool \
@@ -115,17 +110,24 @@ jobs:
         run: |
           mkdir -p AppDir/usr/bin
           cp dist/IDMT-Trip-Calculator AppDir/usr/bin/
+
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           cp icon.png AppDir/usr/share/icons/hicolor/256x256/apps/idmt.png
-          echo "[Desktop Entry]
-Type=Application
-Name=IDMT Trip Calculator
-Exec=IDMT-Trip-Calculator
-Icon=idmt
-Categories=Utility;" > AppDir/IDMT.desktop
-          echo "#!/bin/bash
-DIR=\$(dirname \$(readlink -f \"\$0\"))
-exec \"\$DIR/usr/bin/IDMT-Trip-Calculator\"" > AppDir/AppRun
+
+          cat << 'EOF' > AppDir/IDMT.desktop
+          [Desktop Entry]
+          Type=Application
+          Name=IDMT Trip Calculator
+          Exec=IDMT-Trip-Calculator
+          Icon=idmt
+          Categories=Utility;
+          EOF
+
+          cat << 'EOF' > AppDir/AppRun
+          #!/bin/bash
+          DIR="$(dirname "$(readlink -f "$0")")"
+          exec "$DIR/usr/bin/IDMT-Trip-Calculator"
+          EOF
           chmod +x AppDir/AppRun
 
       - name: Build AppImage
@@ -140,15 +142,17 @@ exec \"\$DIR/usr/bin/IDMT-Trip-Calculator\"" > AppDir/AppRun
           pgrep -f IDMT-Trip-Calculator || exit 1
           pkill IDMT-Trip-Calculator
 
-      # --- Build DEB ---
+      # ---- DEB Build ----
       - name: Build DEB package
         run: |
           mkdir -p deb/DEBIAN
-          echo "Package: idmt-trip-calculator
-Version: ${GITHUB_REF_NAME#v}
-Architecture: amd64
-Maintainer: godwintgn
-Description: IEC Relay IDMT Calculator" > deb/DEBIAN/control
+          cat << EOF > deb/DEBIAN/control
+          Package: idmt-trip-calculator
+          Version: ${GITHUB_REF_NAME#v}
+          Architecture: amd64
+          Maintainer: godwintgn
+          Description: IEC Relay IDMT Calculator
+          EOF
 
           mkdir -p deb/usr/local/bin
           cp dist/IDMT-Trip-Calculator deb/usr/local/bin/idmt-trip-calculator
@@ -158,7 +162,7 @@ Description: IEC Relay IDMT Calculator" > deb/DEBIAN/control
 
           dpkg-deb --build deb idmt-trip-calculator_${GITHUB_REF_NAME#v}_amd64.deb
 
-      - name: Test DEB install
+      - name: Test DEB package
         run: |
           sudo apt install -y ./idmt-trip-calculator*.deb
           xvfb-run -a IDMT-Trip-Calculator &
@@ -166,7 +170,10 @@ Description: IEC Relay IDMT Calculator" > deb/DEBIAN/control
           pgrep -f IDMT-Trip-Calculator || exit 1
           sudo apt remove -y idmt-trip-calculator
 
-      # --- Build RPM ---
+      # ---- RPM Build ----
+      - name: Install fpm
+        run: sudo apt install -y ruby ruby-dev && sudo gem install --no-document fpm
+
       - name: Build RPM package
         run: |
           fpm -s dir -t rpm \
@@ -175,18 +182,17 @@ Description: IEC Relay IDMT Calculator" > deb/DEBIAN/control
             dist/IDMT-Trip-Calculator=/usr/local/bin/idmt-trip-calculator \
             icon.png=/usr/share/icons/hicolor/256x256/apps/idmt.png
 
-      - name: Test RPM (Fedora Container)
+      - name: Test RPM in Fedora container
         run: |
-          docker run --rm -v "$PWD:/app" fedora:40 bash -c "
-            dnf install -y /app/*.rpm &&
-            xvfb-run -a IDMT-Trip-Calculator &
-            sleep 3
-            pgrep -f IDMT-Trip-Calculator || exit 1
-            dnf remove -y idmt-trip-calculator
-          "
+          docker run --rm -v "$PWD:/app" fedora:40 bash -s << 'EOF'
+          dnf install -y /app/*.rpm
+          xvfb-run -a IDMT-Trip-Calculator &
+          sleep 3
+          pgrep -f IDMT-Trip-Calculator || exit 1
+          dnf remove -y idmt-trip-calculator
+          EOF
 
-      - name: Upload Linux builds
-        id: upload
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-builds
@@ -197,14 +203,14 @@ Description: IEC Relay IDMT Calculator" > deb/DEBIAN/control
 
 
   # ---------------------------------------------------------
-  #  PUBLISH RELEASE
+  #  RELEASE PUBLISH
   # ---------------------------------------------------------
   release:
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: release_assets
