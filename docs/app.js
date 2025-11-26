@@ -1,94 +1,90 @@
-// Sanitize numeric input
-function sanitizeNumber(value) {
-    return value.replace(/[^0-9.]/g, "");
-}
-
-document.querySelectorAll("input").forEach(inp => {
+// ---------------------------
+// Input sanitize
+// ---------------------------
+document.querySelectorAll("input").forEach((inp) => {
     inp.addEventListener("input", () => {
-        inp.value = sanitizeNumber(inp.value);
+        inp.value = inp.value.replace(/[^0-9.]/g, "");
     });
 });
 
-// Shake animation
+// Shake effect
 function shake(el) {
     el.classList.add("shake");
     setTimeout(() => el.classList.remove("shake"), 300);
 }
 
-// IEC math
+// ---------------------------
+// IEC Calculation
+// ---------------------------
 function calculateTripTime(pickup, fault, tms, curve) {
     if (fault <= pickup) return Infinity;
 
-    const K = {
-        normal: 0.14,
-        very: 13.5,
-        extreme: 80,
-        long: 120
-    }[curve];
-
     const ratio = fault / pickup;
-    const t = K * tms / (Math.pow(ratio, 0.02) - 1);
 
-    return (!isFinite(t) || t <= 0) ? Infinity : t;
+    const curves = {
+        normal:  { k: 0.14,  alpha: 0.02 },
+        very:    { k: 13.5, alpha: 1 },
+        extreme: { k: 80,   alpha: 2 },
+        long:    { k: 120,  alpha: 1 }
+    };
+
+    const cfg = curves[curve];
+    const denom = Math.pow(ratio, cfg.alpha) - 1;
+
+    if (denom <= 0) return Infinity;
+
+    return tms * (cfg.k / denom);
 }
 
-/* ------------------------
-   CALCULATE BUTTON
--------------------------*/
-document.getElementById("calcBtn").onclick = () => {
-    const pickup = document.getElementById("pickup");
-    const fault = document.getElementById("fault");
-    const tms = document.getElementById("tms");
-    const curve = document.getElementById("curve").value;
-    const result = document.getElementById("result");
+function format(t) {
+    if (!isFinite(t)) return "No trip (I/Is ≤ 1)";
+    if (t < 0.001) return t.toExponential(4) + " s";
+    if (t < 1) return t.toFixed(3) + " s";
+    if (t < 10) return t.toFixed(2) + " s";
+    if (t < 100) return t.toFixed(1) + " s";
+    return t.toFixed(0) + " s";
+}
 
+// ---------------------------
+// Calculate button
+// ---------------------------
+document.getElementById("calcBtn").onclick = () => {
     const p = parseFloat(pickup.value);
     const f = parseFloat(fault.value);
     const t = parseFloat(tms.value);
+    const type = curve.value;
 
-    if (!p) { shake(pickup); return result.textContent = "Invalid pickup"; }
-    if (!f) { shake(fault); return result.textContent = "Invalid fault"; }
-    if (!t) { shake(tms); return result.textContent = "Invalid TMS"; }
+    if (!p || p <= 0) { shake(pickup); result.textContent="Pickup must be > 0"; return; }
+    if (!f || f <= 0) { shake(fault); result.textContent="Fault must be > 0"; return; }
+    if (!t || t <= 0) { shake(tms); result.textContent="TMS must be > 0"; return; }
 
-    const trip = calculateTripTime(p, f, t, curve);
-
-    if (trip === Infinity) {
-        result.textContent = "No trip (Fault ≤ Pickup)";
-        result.style.color = "#d9534f";
-    } else {
-        result.textContent = `Trip time: ${trip.toFixed(4)} s`;
-        result.style.color = "var(--button-bg)";
-    }
+    const trip = calculateTripTime(p, f, t, type);
+    result.textContent = "Trip time: " + format(trip);
 };
 
-/* ------------------------
-   SHARE BUTTON
--------------------------*/
+// ---------------------------
+// Share result
+// ---------------------------
 document.getElementById("shareBtn").onclick = () => {
-    const text = document.getElementById("result").textContent;
-
-    if (navigator.share) {
-        navigator.share({ text });
-    } else {
-        navigator.clipboard.writeText(text);
-        alert("Result copied to clipboard!");
-    }
+    const text = result.textContent;
+    if (navigator.share) navigator.share({ text });
+    else navigator.clipboard.writeText(text);
 };
 
-/* ------------------------
-   THEME TOGGLE
--------------------------*/
-const toggle = document.getElementById("themeToggle");
+// ---------------------------
+// Theme toggle
+// ---------------------------
+const themeToggle = document.getElementById("themeToggle");
 
-function applyTheme(mode) {
-    document.documentElement.classList.toggle("dark", mode === "dark");
-    toggle.textContent = mode === "dark" ? "☀️" : "🌙";
+function setTheme(mode) {
+    document.documentElement.setAttribute("data-theme", mode);
     localStorage.setItem("theme", mode);
+    themeToggle.textContent = mode === "dark" ? "☀️" : "🌙";
 }
 
-applyTheme(localStorage.getItem("theme") || "light");
+setTheme(localStorage.getItem("theme") || "dark");
 
-toggle.onclick = () => {
-    const current = document.documentElement.classList.contains("dark") ? "dark" : "light";
-    applyTheme(current === "dark" ? "light" : "dark");
+themeToggle.onclick = () => {
+    const newTheme = localStorage.getItem("theme") === "dark" ? "light" : "dark";
+    setTheme(newTheme);
 };

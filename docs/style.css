@@ -1,162 +1,117 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+:root {
+    --bg: #ffffff;
+    --fg: #111;
+    --card-bg: #ffffff;
+    --input-bg: #f3f3f3;
+    --button-bg: #007bff;
+    --button-fg: #fff;
+    --button-secondary-bg: #444;
 }
 
-html {
-    font-family: "Segoe UI", sans-serif;
-    font-size: 16px;
-    -webkit-tap-highlight-color: transparent;
+:root[data-theme="dark"] {
+    --bg: #111;
+    --fg: #eee;
+    --card-bg: #1b1b1b;
+    --input-bg: #222;
+    --button-bg: #0d6efd;
+    --button-secondary-bg: #333;
 }
 
 body {
     background: var(--bg);
     color: var(--fg);
-    padding: 16px;
-    transition: background .3s, color .3s;
+    margin: 0;
+    padding: 20px;
+    font-family: "Segoe UI", sans-serif;
 }
 
-:root {
-    --bg: #f4f7fa;
-    --fg: #1a1a1a;
-    --card-bg: #ffffff;
-    --border: #d7d7d7;
-    --input-bg: #ffffff;
-    --button-bg: #0066ff;
-    --button-fg: #ffffff;
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
 }
 
-.dark {
-    --bg: #121212;
-    --fg: #e4e4e4;
-    --card-bg: #1f1f1f;
-    --border: #333333;
-    --input-bg: #282828;
-    --button-bg: #0a84ff;
-}
-
-/* HEADER */
 .header {
+    flex: 1;
     text-align: center;
-    margin-bottom: 18px;
 }
 
-.header h1 {
-    font-size: 2rem;
-    margin-bottom: 4px;
+.theme-toggle {
+    position: relative;
+    right: 0;
+    font-size: 28px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--fg);
 }
 
-.header p {
-    font-size: 1rem;
-    opacity: 0.7;
-}
-
-/* CARDS */
+/* Card */
 .card {
+    margin: 0 auto;
+    max-width: 350px;
     background: var(--card-bg);
-    border: 1px solid var(--border);
-    padding: 18px;
-    border-radius: 14px;
-    margin-bottom: 18px;
-    transition: box-shadow .3s;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 24px #0003;
 }
 
-.card:hover {
-    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-}
-
-/* INPUTS */
+/* Inputs */
 label {
-    margin-top: 10px;
-    font-weight: 600;
+    display: block;
+    margin: 12px 0 4px;
 }
 
 input, select {
     width: 100%;
-    height: 48px;
-    margin-top: 6px;
-    padding: 8px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #4442;
     background: var(--input-bg);
     color: var(--fg);
-    font-size: 1.05rem;
+    font-size: 1rem;
 }
 
-input:focus, select:focus {
-    border-color: var(--button-bg);
-}
-
-/* BUTTONS */
-button {
+/* Buttons */
+.button-primary {
     width: 100%;
-    height: 52px;
-    margin-top: 14px;
-    font-size: 1.2rem;
-    border-radius: 12px;
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 8px;
     border: none;
-    color: var(--button-fg);
     background: var(--button-bg);
+    color: var(--button-fg);
+    font-size: 1.1rem;
     cursor: pointer;
-    transition: opacity .25s;
 }
 
-button:active {
-    opacity: 0.7;
-}
-
-/* SHARE BUTTON */
-.share-btn {
-    background: #333;
+.button-secondary {
+    width: 100%;
     margin-top: 10px;
-}
-
-/* RESULT BOX */
-#result {
-    margin-top: 18px;
-    font-size: 1.4rem;
-    font-weight: bold;
-    text-align: center;
     padding: 12px;
-    border-radius: 10px;
-    background: rgba(0, 102, 255, 0.09);
-    color: var(--button-bg);
-}
-
-/* SHAKE ANIMATION */
-.shake {
-    animation: shakeAnim 0.3s ease;
-}
-
-@keyframes shakeAnim {
-    0% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-    100% { transform: translateX(0); }
-}
-
-/* THEME TOGGLE BUTTON */
-.theme-toggle {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    font-size: 1.8rem;
-    background: none;
+    border-radius: 8px;
     border: none;
-    cursor: pointer;
+    background: var(--button-secondary-bg);
     color: var(--fg);
+    cursor: pointer;
 }
 
-/* DESKTOP MODE */
-@media (min-width: 700px) {
-    body {
-        padding: 40px;
-    }
-    .container {
-        max-width: 520px;
-        margin: auto;
-    }
+.result {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.shake {
+    animation: shake 0.3s;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
 }
