@@ -31,10 +31,11 @@ jobs:
 
       - name: Build Windows EXE (with icon)
         run: |
-          pyinstaller --windowed --onefile ^
-            --icon=icon.ico ^
-            --upx-dir upx ^
+          pyinstaller --windowed --onefile `
+            --icon=icon.ico `
+            --upx-dir upx `
             --name "IDMT-Trip-Calculator" idmt_tool/gui/main.py
+
 
       - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
@@ -100,8 +101,11 @@ jobs:
           cp icon.png AppDir/idmt.png
 
       - name: Build AppImage
+        env:
+          ARCH: x86_64
         run: |
           ./appimagetool AppDir IDMT-Trip-Calculator.AppImage
+
 
       - name: Build .deb (with icon)
         run: |
