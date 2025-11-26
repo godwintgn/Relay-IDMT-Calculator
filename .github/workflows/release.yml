@@ -75,7 +75,8 @@ jobs:
       - name: Install Linux build deps
         run: |
           sudo apt update
-          sudo apt install -y libfuse2 rpm dpkg-dev fakeroot xvfb
+          sudo apt install -y libfuse2 rpm dpkg-dev fakeroot xvfb ruby ruby-dev
+          sudo gem install --no-document fpm
 
       - name: Install Python dependencies
         run: |
@@ -97,7 +98,7 @@ jobs:
           xvfb-run -a dist/IDMT-Trip-Calculator &
           sleep 3
           pgrep -f IDMT-Trip-Calculator || exit 1
-          pkill IDMT-Trip-Calculator
+          pkill -f IDMT-Trip-Calculator
 
       # ---- AppImage Build ----
       - name: Download appimagetool
@@ -140,7 +141,7 @@ jobs:
           xvfb-run -a ./IDMT-Trip-Calculator.AppImage &
           sleep 3
           pgrep -f IDMT-Trip-Calculator || exit 1
-          pkill IDMT-Trip-Calculator
+          pkill -f IDMT-Trip-Calculator
 
       # ---- DEB Build ----
       - name: Build DEB package
@@ -162,7 +163,7 @@ jobs:
 
           dpkg-deb --build deb idmt-trip-calculator_${GITHUB_REF_NAME#v}_amd64.deb
 
-      - name: Test DEB package
+      - name: Test DEB install
         run: |
           sudo apt install -y ./idmt-trip-calculator*.deb
           xvfb-run -a IDMT-Trip-Calculator &
@@ -171,9 +172,6 @@ jobs:
           sudo apt remove -y idmt-trip-calculator
 
       # ---- RPM Build ----
-      - name: Install fpm
-        run: sudo apt install -y ruby ruby-dev && sudo gem install --no-document fpm
-
       - name: Build RPM package
         run: |
           fpm -s dir -t rpm \
@@ -206,7 +204,9 @@ jobs:
   #  RELEASE PUBLISH
   # ---------------------------------------------------------
   release:
-    needs: [build-windows, build-linux]
+    needs:
+      - build-windows
+      - build-linux
     runs-on: ubuntu-latest
 
     steps:
