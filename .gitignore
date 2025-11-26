@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.idmt_env/
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# PyInstaller output
+*.exe
+*.app
+*.dmg
+*.AppImage
+
+# macOS metadata
+.DS_Store
+
+# Linux editor junk
+*~
