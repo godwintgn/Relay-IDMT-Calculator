@@ -36,8 +36,6 @@ Clean UI. Accurate math. Windows & Linux native builds.
 
 ---
 
-### 📱 QR Code (for quick access — best scanned from desktop screen)
-
 <p align="center">
   <img src="docs/qr.png" width="220" alt="QR Code to Web Version">
 </p>
