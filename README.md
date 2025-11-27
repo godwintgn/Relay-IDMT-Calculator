@@ -1,7 +1,6 @@
 <h1 align="center">⭐ Relay IDMT Calculator</h1>
 <h3 align="center">Fast. Accurate. Cross-Platform IEC Trip Time Calculation.</h3>
 
-
 <p align="center">
   <img src="icon.png" width="180" alt="Relay IDMT Calculator Icon">
 </p>
@@ -12,14 +11,41 @@ Clean UI. Accurate math. Windows & Linux native builds.
 </p>
 
 <p align="center">
+  <!-- Download Desktop App -->
+  <a href="https://github.com/godwintgn/Relay-IDMT-Calculator/releases/latest">
+    <img src="https://img.shields.io/badge/⬇️%20Download%20Desktop%20App-2ea043?style=for-the-badge">
+  </a>
+
+  <!-- Online Web Version -->
+  <a href="https://godwintgn.github.io/Relay-IDMT-Calculator/">
+    <img src="https://img.shields.io/badge/🌐%20Open%20Web%20Version-0078D4?style=for-the-badge">
+  </a>
+</p>
+
+<p align="center">
   <a href="https://github.com/godwintgn/Relay-IDMT-Calculator/releases">
     <img src="https://img.shields.io/github/v/release/godwintgn/Relay-IDMT-Calculator?color=2ea043&label=Latest%20Release&style=for-the-badge">
   </a>
+
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-0366d6?style=for-the-badge">
+
   <a href="https://github.com/godwintgn/Relay-IDMT-Calculator/tree/main?tab=License-1-ov-file">
-  <img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange?style=for-the-badge">
+    <img src="https://img.shields.io/badge/License-CC%20BY--NC%204.0-orange?style=for-the-badge">
   </a>
 </p>
+<style>
+@media (max-width: 768px) {
+  .qr-desktop-only {
+    display: none;
+  }
+}
+</style>
+
+<p align="center" class="qr-desktop-only">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAuQAAALkAQAAAABv3x3IAAAEEklEQVR4nO3dS5LkSBDG4fOvNHVpW7GiWYE7hA9rGeKWJFWQyoJ7CQ0vPXYVltkR0Pcnzk2smfTdm3qdgDgFbcqccuQYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4Uw7V4bTca2Qy2h2btPpmFNttw7Hm5fd91xXMt3LZz6f4/tNMM7M8h7MYZ3Csc7ob5f8n26PjdhzHnY0uLu+4fPySYax9izt2uC+9m4HOql8tzHNsqXxz1a47Se1OLudFxOp8ONt1Glsdtnvun5JL6r8Dmx1E3Z0tLvb4ZcdZvc0ce0boon267s61cY0dv8j2DyPfe5x6v7bo+N2HMedjS4u77h8/JJhrH2LO3a4L72bgc6qXy3Mc2ypfHPVrjtJ7U4u50XE6nw423UZWx22e+6fkkvqvwObHUQ7ulYlxbv7r+IP5bBw8nruLOHuTtkW8c+Xdww2dYO0grli7Vnmt+00mNGiu3DDo6Ojo6+vl4vHsgae0+RaR7QdV5FYuVWwYdHR0dHR0dHQ0MhvLPe3kwX0v0wAAAAASUVORK5CYII=" 
+       width="260" alt="QR Code to Web Version">
+</p>
+
 
 ---
 
